@@ -6,15 +6,20 @@ import { Button } from "@/components/ui/button";
 export default function HomePage() {
   const router = useRouter();
 
+  const handleStartInterview = () => {
+    console.log("[v0] Start Interview clicked");
+    router.push("/setup");
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
+    <main className="min-h-screen w-full bg-slate-900 flex items-center justify-center px-4 py-8">
       <div className="max-w-2xl w-full text-center space-y-8">
         {/* Header */}
         <div className="space-y-4">
-          <h1 className="text-5xl md:text-6xl font-bold text-white">
+          <h1 className="text-4xl font-bold text-white">
             Digital Twin Interview
           </h1>
-          <p className="text-xl text-slate-300">
+          <p className="text-lg text-slate-300">
             Experience an interactive conversation with Ali Azan&apos;s digital twin
           </p>
         </div>
@@ -32,7 +37,7 @@ export default function HomePage() {
         {/* Key Features */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <div className="text-2xl mb-2">🎯</div>
+            <div className="text-2xl mb-2">Target</div>
             <h3 className="text-lg font-semibold text-white mb-2">Structured Interview</h3>
             <p className="text-sm text-slate-400">
               6 carefully curated questions covering leadership, innovation, and vision.
@@ -40,7 +45,7 @@ export default function HomePage() {
           </div>
 
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <div className="text-2xl mb-2">⚡</div>
+            <div className="text-2xl mb-2">Lightning</div>
             <h3 className="text-lg font-semibold text-white mb-2">Real-time Streaming</h3>
             <p className="text-sm text-slate-400">
               Watch answers appear in real-time with advanced AI streaming.
@@ -48,7 +53,7 @@ export default function HomePage() {
           </div>
 
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <div className="text-2xl mb-2">📄</div>
+            <div className="text-2xl mb-2">Document</div>
             <h3 className="text-lg font-semibold text-white mb-2">PDF Report</h3>
             <p className="text-sm text-slate-400">
               Download a professional PDF report with all answers and insights.
@@ -58,9 +63,9 @@ export default function HomePage() {
 
         {/* CTA Button */}
         <Button
-          onClick={() => router.push("/setup")}
+          onClick={handleStartInterview}
           size="lg"
-          className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6 rounded-lg"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
         >
           Start Interview
         </Button>

@@ -24,6 +24,7 @@ export default function SetupPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[v0] Setup form submitted");
 
     if (!formData.name || !formData.email || !formData.role) {
       alert("Please fill in all fields");
@@ -33,19 +34,23 @@ export default function SetupPage() {
     setIsLoading(true);
 
     // Store in session storage for the interview
-    sessionStorage.setItem(
-      "interviewSession",
-      JSON.stringify({
-        candidateName: formData.name,
-        candidateEmail: formData.email,
-        candidateRole: formData.role,
-        startedAt: Date.now(),
-        answers: [],
-      })
-    );
+    const sessionData = {
+      id: `session-${Date.now()}`,
+      candidateName: formData.name,
+      candidateEmail: formData.email,
+      candidateRole: formData.role,
+      startedAt: Date.now(),
+      answers: [],
+    };
+
+    console.log("[v0] Saving session data:", sessionData);
+    sessionStorage.setItem("interviewSession", JSON.stringify(sessionData));
 
     // Navigate to interview
-    router.push("/interview");
+    setTimeout(() => {
+      console.log("[v0] Navigating to interview");
+      router.push("/interview");
+    }, 100);
   };
 
   return (

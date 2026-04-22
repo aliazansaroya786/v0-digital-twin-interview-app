@@ -12,24 +12,40 @@ export default function ResultsPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
+    console.log("[v0] Results page mounted");
     const storedSession = sessionStorage.getItem("interviewSession");
+    console.log("[v0] Stored session:", storedSession);
+    
     if (!storedSession) {
+      console.log("[v0] No session found, redirecting to setup");
       router.push("/setup");
       return;
     }
 
-    const parsedSession = JSON.parse(storedSession) as InterviewSession;
-    setSession(parsedSession);
+    try {
+      const parsedSession = JSON.parse(storedSession) as InterviewSession;
+      console.log("[v0] Session parsed for results:", parsedSession);
+      setSession(parsedSession);
+    } catch (error) {
+      console.error("[v0] Error parsing session:", error);
+      router.push("/setup");
+    }
   }, [router]);
 
   const generatePDF = async () => {
     if (!session) return;
 
+    console.log("[v0] Starting PDF generation");
     setIsExporting(true);
 
     try {
       const element = document.getElementById("pdf-content");
-      if (!element) return;
+      if (!element) {
+        console.error("[v0] PDF content element not found");
+        return;
+      }
+
+      console.log("[v0] Found PDF content element");
 
       const opt = {
         margin: 10,
@@ -39,9 +55,11 @@ export default function ResultsPage() {
         jsPDF: { orientation: "portrait" as const, unit: "mm", format: "a4" },
       };
 
+      console.log("[v0] Starting html2pdf conversion");
       html2pdf().set(opt).from(element).save();
+      console.log("[v0] PDF generation triggered");
     } catch (error) {
-      console.error("PDF generation error:", error);
+      console.error("[v0] PDF generation error:", error);
       alert("Failed to generate PDF. Please try again.");
     } finally {
       setIsExporting(false);

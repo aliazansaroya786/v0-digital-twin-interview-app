@@ -15,14 +15,24 @@ export default function InterviewPage() {
 
   // Initialize session from sessionStorage
   useEffect(() => {
+    console.log("[v0] Interview page mounted");
     const storedSession = sessionStorage.getItem("interviewSession");
+    console.log("[v0] Stored session:", storedSession);
+    
     if (!storedSession) {
+      console.log("[v0] No session found, redirecting to setup");
       router.push("/setup");
       return;
     }
 
-    const parsedSession = JSON.parse(storedSession) as InterviewSession;
-    setSession(parsedSession);
+    try {
+      const parsedSession = JSON.parse(storedSession) as InterviewSession;
+      console.log("[v0] Session parsed:", parsedSession);
+      setSession(parsedSession);
+    } catch (error) {
+      console.error("[v0] Error parsing session:", error);
+      router.push("/setup");
+    }
   }, [router]);
 
   const currentQuestion = DEFAULT_QUESTIONS[currentQuestionIndex];
@@ -30,6 +40,7 @@ export default function InterviewPage() {
   const handleStreamAnswer = useCallback(async () => {
     if (!currentQuestion || isStreaming) return;
 
+    console.log("[v0] Starting to stream answer for question:", currentQuestion.text);
     setIsStreaming(true);
     setCurrentAnswer("");
 
@@ -39,6 +50,8 @@ export default function InterviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: currentQuestion.text }),
       });
+
+      console.log("[v0] Response status:", response.status);
 
       if (!response.body) {
         throw new Error("No response body");
@@ -52,10 +65,12 @@ export default function InterviewPage() {
         if (done) break;
 
         const chunk = decoder.decode(value);
+        console.log("[v0] Received chunk:", chunk.substring(0, 50));
         setCurrentAnswer((prev) => prev + chunk);
       }
+      console.log("[v0] Streaming complete");
     } catch (error) {
-      console.error("Streaming error:", error);
+      console.error("[v0] Streaming error:", error);
       setCurrentAnswer(
         "An error occurred while fetching the response. Please try again."
       );
