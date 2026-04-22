@@ -7,7 +7,6 @@ export default function HomePage() {
   const router = useRouter();
 
   const handleStartInterview = () => {
-    console.log("[v0] Start Interview clicked");
     router.push("/setup");
   };
 
