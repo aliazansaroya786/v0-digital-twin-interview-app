@@ -41,9 +41,12 @@ Create a `.env.local` file in the root directory:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=mistral-saba-24b
 UPSTASH_VECTOR_REST_URL=your_upstash_url_here
 UPSTASH_VECTOR_REST_TOKEN=your_upstash_token_here
 ```
+
+When deploying to Vercel, make sure the same environment variables are configured in your Vercel project settings. If the default model is not accessible to your account, set `GROQ_MODEL` to a model your Groq API key can use.
 
 ### Installation
 

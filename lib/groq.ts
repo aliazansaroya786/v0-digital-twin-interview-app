@@ -8,7 +8,7 @@ function getGroqClient() {
   return new Groq({ apiKey });
 }
 
-const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "llama3.1-8b-instant";
+const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "mistral-saba-24b";
 
 export async function streamInterviewResponse(
   question: string,
