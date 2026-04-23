@@ -11,7 +11,11 @@ An interactive AI-powered interview platform where users can conduct live conver
 - **Session Management**: Temporary session storage for interview data
 - **Beautiful UI**: Dark-themed interface with smooth animations and gradients
 
+<<<<<<< HEAD
 ## Tech Stack 
+=======
+## Tech Stack
+>>>>>>> 0acfa82a8ae457558697d3a660862e94e8061129
 
 - **Frontend**: Next.js 16 (App Router), React 19, TypeScript
 - **Styling**: Tailwind CSS v4 with custom design tokens

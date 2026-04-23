@@ -8,8 +8,11 @@ function getGroqClient() {
   return new Groq({ apiKey });
 }
 
+<<<<<<< HEAD
 const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "mistral-saba-24b";
 
+=======
+>>>>>>> 0acfa82a8ae457558697d3a660862e94e8061129
 export async function streamInterviewResponse(
   question: string,
   context: string,
@@ -19,7 +22,11 @@ export async function streamInterviewResponse(
 
   const groq = getGroqClient();
   const stream = await groq.chat.completions.create({
+<<<<<<< HEAD
     model: DEFAULT_GROQ_MODEL,
+=======
+    model: "mixtral-8x7b-32768",
+>>>>>>> 0acfa82a8ae457558697d3a660862e94e8061129
     messages: [
       {
         role: "system",
