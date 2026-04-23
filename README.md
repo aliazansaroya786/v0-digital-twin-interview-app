@@ -41,7 +41,7 @@ Create a `.env.local` file in the root directory:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
-GROQ_MODEL=mistral-saba-24b
+GROQ_MODEL=llama-3.3-70b-versatile
 UPSTASH_VECTOR_REST_URL=your_upstash_url_here
 UPSTASH_VECTOR_REST_TOKEN=your_upstash_token_here
 ```

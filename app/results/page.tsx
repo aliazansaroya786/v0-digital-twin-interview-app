@@ -68,10 +68,139 @@ export default function ResultsPage() {
       element.style.display = originalDisplay;
     } catch (error) {
       console.error("[v0] PDF generation error:", error);
-      alert("Failed to generate PDF. Please try again. Error: " + (error instanceof Error ? error.message : String(error)));
+      alert("PDF generation failed. Try downloading as TXT or MD instead. Error: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const generateTXT = () => {
+    if (!session) return;
+
+    const totalTime = session.completedAt
+      ? Math.round((session.completedAt - session.startedAt) / 60000)
+      : 0;
+
+    const score = Math.min(100, Math.round((session.answers.length / 5) * 100)); // Simple completion score
+
+    let content = `DIGITAL TWIN INTERVIEW REPORT
+===============================
+
+Candidate Information:
+- Name: ${session.candidateName}
+- Email: ${session.candidateEmail}
+- Role: ${session.candidateRole}
+- Date: ${new Date(session.completedAt || Date.now()).toLocaleDateString()}
+- Duration: ${totalTime} minutes
+- Completion Score: ${score}/100
+
+Interview Responses:
+`;
+
+    session.answers.forEach((answer, index) => {
+      content += `
+${index + 1}. ${answer.questionText}
+   Category: ${answer.category}
+   Response: ${answer.answer}
+`;
+    });
+
+    if (session.chatMessages && session.chatMessages.length > 1) {
+      content += `
+
+Additional Q&A:
+`;
+
+      session.chatMessages.slice(1).forEach((message) => {
+        if (message.role === "user") {
+          content += `
+Question: ${message.content}
+`;
+        } else {
+          content += `Response: ${message.content}
+`;
+        }
+      });
+    }
+
+    content += `
+
+Report generated on: ${new Date().toLocaleString()}
+`;
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `interview-report-${new Date().toISOString().split("T")[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const generateMD = () => {
+    if (!session) return;
+
+    const totalTime = session.completedAt
+      ? Math.round((session.completedAt - session.startedAt) / 60000)
+      : 0;
+
+    const score = Math.min(100, Math.round((session.answers.length / 5) * 100));
+
+    let content = `# Digital Twin Interview Report
+
+## Candidate Information
+- **Name:** ${session.candidateName}
+- **Email:** ${session.candidateEmail}
+- **Role:** ${session.candidateRole}
+- **Date:** ${new Date(session.completedAt || Date.now()).toLocaleDateString()}
+- **Duration:** ${totalTime} minutes
+- **Completion Score:** ${score}/100
+
+## Interview Responses
+`;
+
+    session.answers.forEach((answer, index) => {
+      content += `
+### ${index + 1}. ${answer.questionText}
+**Category:** ${answer.category}
+
+${answer.answer}
+`;
+    });
+
+    if (session.chatMessages && session.chatMessages.length > 1) {
+      content += `
+## Additional Q&A
+`;
+
+      session.chatMessages.slice(1).forEach((message) => {
+        if (message.role === "user") {
+          content += `
+**Question:** ${message.content}
+`;
+        } else {
+          content += `**Response:** ${message.content}
+`;
+        }
+      });
+    }
+
+    content += `
+---
+*Report generated on: ${new Date().toLocaleString()}*
+`;
+
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `interview-report-${new Date().toISOString().split("T")[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (!session) {
@@ -86,6 +215,8 @@ export default function ResultsPage() {
     ? Math.round((session.completedAt - session.startedAt) / 60000)
     : 0;
 
+  const score = Math.min(100, Math.round((session.answers.length / 5) * 100)); // Simple completion score
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -98,7 +229,7 @@ export default function ResultsPage() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Questions Answered</p>
             <p className="text-2xl font-bold text-white">{session.answers.length}</p>
@@ -106,6 +237,10 @@ export default function ResultsPage() {
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Time Taken</p>
             <p className="text-2xl font-bold text-white">{totalTime} mins</p>
+          </div>
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <p className="text-slate-400 text-sm">Completion Score</p>
+            <p className="text-2xl font-bold text-green-400">{score}/100</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Completion Date</p>
@@ -294,6 +429,18 @@ export default function ResultsPage() {
             className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3"
           >
             {isExporting ? "Generating PDF..." : "Download Report (PDF)"}
+          </Button>
+          <Button
+            onClick={generateTXT}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3"
+          >
+            Download Report (TXT)
+          </Button>
+          <Button
+            onClick={generateMD}
+            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3"
+          >
+            Download Report (MD)
           </Button>
           <Button
             onClick={() => {

@@ -134,7 +134,7 @@ export default function ChatPage() {
         id: msg.id,
         role: msg.role,
         content: msg.content,
-        timestamp: msg.timestamp.getTime(),
+        timestamp: msg.timestamp,
       })),
     };
 
