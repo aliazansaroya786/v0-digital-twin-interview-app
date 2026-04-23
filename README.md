@@ -11,11 +11,14 @@ An interactive AI-powered interview platform where users can conduct live conver
 - **Session Management**: Temporary session storage for interview data
 - **Beautiful UI**: Dark-themed interface with smooth animations and gradients
 
-<<<<<<< HEAD
-## Tech Stack 
-=======
 ## Tech Stack
->>>>>>> 0acfa82a8ae457558697d3a660862e94e8061129
+
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript
+- **Styling**: Tailwind CSS v4 with custom design tokens
+- **AI Integration**: Groq API for streaming LLM responses
+- **Vector Database**: Upstash Vector DB for semantic search & context retrieval
+- **PDF Export**: html2pdf.js for client-side PDF generation
+- **Components**: shadcn/ui for polished UI elements
 
 - **Frontend**: Next.js 16 (App Router), React 19, TypeScript
 - **Styling**: Tailwind CSS v4 with custom design tokens
@@ -55,6 +58,25 @@ pnpm dev
 ```
 
 3. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### Offline Testing
+
+For testing the UI and basic functionality without API keys:
+
+1. Run the test server on port 5000:
+```bash
+pnpm test
+```
+
+2. Open [http://localhost:5000](http://localhost:5000) in your browser
+
+**Offline Mode Features:**
+- Mock AI responses when GROQ_API_KEY is not set
+- Full UI functionality without external API calls
+- PDF generation works normally
+- All pages and navigation functional
+
+**Note:** AI responses will be generic mock responses. For full functionality, configure the environment variables above.
 
 ## Project Structure
 

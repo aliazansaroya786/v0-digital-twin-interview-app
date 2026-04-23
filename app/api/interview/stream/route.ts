@@ -15,13 +15,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if GROQ_API_KEY is set
+    // Check if GROQ_API_KEY is set (optional for offline testing)
     if (!process.env.GROQ_API_KEY) {
-      console.error("GROQ_API_KEY not set");
-      return NextResponse.json(
-        { error: "API key not configured. Please set GROQ_API_KEY environment variable." },
-        { status: 500 }
-      );
+      console.warn("GROQ_API_KEY not set - running in offline mode");
     }
 
     // Get relevant context from Upstash Vector DB (gracefully handle if not configured)

@@ -3,30 +3,42 @@ import Groq from "groq-sdk";
 function getGroqClient() {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error("GROQ_API_KEY environment variable is not set");
+    return null; // Return null for offline mode
   }
   return new Groq({ apiKey });
 }
 
-<<<<<<< HEAD
-const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "mistral-saba-24b";
+const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "llama3.1-8b-instant";
 
-=======
->>>>>>> 0acfa82a8ae457558697d3a660862e94e8061129
 export async function streamInterviewResponse(
   question: string,
   context: string,
   onChunk: (chunk: string) => void
 ): Promise<string> {
+  const groq = getGroqClient();
+  
+  if (!groq) {
+    // Offline mode - provide mock response
+    const mockResponse = `Thank you for your question: "${question}". 
+
+In offline mode, I can't access my full knowledge base, but I can share that this is a great question that would typically explore important aspects of technology leadership and innovation.
+
+For a complete response, please ensure your GROQ_API_KEY is configured and you have internet connectivity.`;
+    
+    // Simulate streaming by chunking the response
+    const chunks = mockResponse.split(' ');
+    for (let i = 0; i < chunks.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to simulate streaming
+      onChunk(chunks[i] + ' ');
+    }
+    
+    return mockResponse;
+  }
+
   let fullResponse = "";
 
-  const groq = getGroqClient();
   const stream = await groq.chat.completions.create({
-<<<<<<< HEAD
     model: DEFAULT_GROQ_MODEL,
-=======
-    model: "mixtral-8x7b-32768",
->>>>>>> 0acfa82a8ae457558697d3a660862e94e8061129
     messages: [
       {
         role: "system",

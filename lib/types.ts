@@ -13,6 +13,13 @@ export interface InterviewAnswer {
   timestamp: number;
 }
 
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+}
+
 export interface InterviewSession {
   id: string;
   candidateName: string;
@@ -21,6 +28,7 @@ export interface InterviewSession {
   startedAt: number;
   completedAt?: number;
   answers: InterviewAnswer[];
+  chatMessages?: ChatMessage[];
 }
 
 export const DEFAULT_QUESTIONS: InterviewQuestion[] = [

@@ -3,14 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { InterviewSession, InterviewAnswer } from "@/lib/types";
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
+import { InterviewSession, InterviewAnswer, ChatMessage } from "@/lib/types";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -40,7 +33,7 @@ export default function ChatPage() {
           id: "welcome",
           role: "assistant",
           content: `Thank you for completing the interview, ${parsedSession.candidateName}! Now you can ask me any questions about Ali Azan. Feel free to explore topics like leadership philosophy, innovation strategies, career insights, or anything else you'd like to know. When you're ready, you can generate your interview report.`,
-          timestamp: new Date(),
+          timestamp: Date.now(),
         },
       ]);
     } catch (err) {
@@ -64,7 +57,7 @@ export default function ChatPage() {
       id: `user-${Date.now()}`,
       role: "user",
       content: inputValue,
-      timestamp: new Date(),
+      timestamp: Date.now(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -100,7 +93,7 @@ export default function ChatPage() {
         id: assistantMessageId,
         role: "assistant",
         content: "",
-        timestamp: new Date(),
+        timestamp: Date.now(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -133,10 +126,16 @@ export default function ChatPage() {
   const handleGenerateReport = async () => {
     if (!session) return;
 
-    // Update session with completion timestamp
+    // Update session with completion timestamp and chat messages
     const updatedSession = {
       ...session,
       completedAt: Date.now(),
+      chatMessages: messages.map(msg => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp.getTime(),
+      })),
     };
 
     sessionStorage.setItem("interviewSession", JSON.stringify(updatedSession));
