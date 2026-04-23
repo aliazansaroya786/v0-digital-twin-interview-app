@@ -1,8 +1,12 @@
 import Groq from "groq-sdk";
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+function getGroqClient() {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error("GROQ_API_KEY environment variable is not set");
+  }
+  return new Groq({ apiKey });
+}
 
 export async function streamInterviewResponse(
   question: string,
@@ -11,6 +15,7 @@ export async function streamInterviewResponse(
 ): Promise<string> {
   let fullResponse = "";
 
+  const groq = getGroqClient();
   const stream = await groq.chat.completions.create({
     model: "mixtral-8x7b-32768",
     messages: [

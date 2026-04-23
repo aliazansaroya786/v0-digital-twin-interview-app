@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { InterviewSession } from "@/lib/types";
-import html2pdf from "html2pdf.js";
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -34,6 +33,8 @@ export default function ResultsPage() {
     setIsExporting(true);
 
     try {
+      // Dynamically import html2pdf only in the browser
+      const html2pdf = (await import("html2pdf.js")).default;
       const element = document.getElementById("pdf-content");
       if (!element) return;
 
