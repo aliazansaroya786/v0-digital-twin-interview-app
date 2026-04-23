@@ -34,22 +34,30 @@ export default function ResultsPage() {
 
     try {
       // Dynamically import html2pdf only in the browser
-      const html2pdf = (await import("html2pdf.js")).default;
+      const html2pdfModule = await import("html2pdf.js");
+      const html2pdf = html2pdfModule.default || html2pdfModule;
+      
       const element = document.getElementById("pdf-content");
-      if (!element) return;
+      if (!element) {
+        throw new Error("Report content not found");
+      }
 
-      const opt = {
-        margin: 10,
-        filename: `interview-report-${new Date().toISOString().split("T")[0]}.pdf`,
+      const filename = `interview-report-${new Date().toISOString().split("T")[0]}.pdf`;
+
+      const options = {
+        margin: 10 as const,
+        filename: filename,
         image: { type: "png" as const, quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: "portrait" as const, unit: "mm", format: "a4" },
+        html2canvas: { scale: 2, logging: false },
+        jsPDF: { orientation: "portrait" as const, unit: "mm" as const, format: "a4" as const },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
       };
 
-      html2pdf().set(opt).from(element).save();
+      // Call html2pdf with proper chaining
+      await html2pdf().set(options).from(element).save();
     } catch (error) {
-      console.error("PDF generation error:", error);
-      alert("Failed to generate PDF. Please try again.");
+      console.error("[v0] PDF generation error:", error);
+      alert("Failed to generate PDF. Please try again. Error: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsExporting(false);
     }
@@ -97,7 +105,7 @@ export default function ResultsPage() {
         </div>
 
         {/* PDF Content for Export */}
-        <div id="pdf-content" className="bg-white p-8 rounded-lg hidden">
+        <div id="pdf-content" className="bg-white p-8 rounded-lg" style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Digital Twin Interview Report
