@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { InterviewSession } from "@/lib/types";
-import html2pdf from "html2pdf.js";
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -12,22 +11,18 @@ export default function ResultsPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    console.log("[v0] Results page mounted");
     const storedSession = sessionStorage.getItem("interviewSession");
-    console.log("[v0] Stored session:", storedSession);
     
     if (!storedSession) {
-      console.log("[v0] No session found, redirecting to setup");
       router.push("/setup");
       return;
     }
 
     try {
       const parsedSession = JSON.parse(storedSession) as InterviewSession;
-      console.log("[v0] Session parsed for results:", parsedSession);
       setSession(parsedSession);
     } catch (error) {
-      console.error("[v0] Error parsing session:", error);
+      console.error("Error parsing session:", error);
       router.push("/setup");
     }
   }, [router]);
@@ -35,17 +30,13 @@ export default function ResultsPage() {
   const generatePDF = async () => {
     if (!session) return;
 
-    console.log("[v0] Starting PDF generation");
     setIsExporting(true);
 
     try {
+      // Dynamically import html2pdf only in the browser
+      const html2pdf = (await import("html2pdf.js")).default;
       const element = document.getElementById("pdf-content");
-      if (!element) {
-        console.error("[v0] PDF content element not found");
-        return;
-      }
-
-      console.log("[v0] Found PDF content element");
+      if (!element) return;
 
       const opt = {
         margin: 10,
@@ -55,11 +46,9 @@ export default function ResultsPage() {
         jsPDF: { orientation: "portrait" as const, unit: "mm", format: "a4" },
       };
 
-      console.log("[v0] Starting html2pdf conversion");
       html2pdf().set(opt).from(element).save();
-      console.log("[v0] PDF generation triggered");
     } catch (error) {
-      console.error("[v0] PDF generation error:", error);
+      console.error("PDF generation error:", error);
       alert("Failed to generate PDF. Please try again.");
     } finally {
       setIsExporting(false);
