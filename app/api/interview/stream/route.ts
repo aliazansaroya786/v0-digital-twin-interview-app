@@ -15,8 +15,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get relevant context from Upstash Vector DB
-    const context = await queryUpstashVector(question);
+    // Check if GROQ_API_KEY is set
+    if (!process.env.GROQ_API_KEY) {
+      console.error("GROQ_API_KEY not set");
+      return NextResponse.json(
+        { error: "API key not configured. Please set GROQ_API_KEY environment variable." },
+        { status: 500 }
+      );
+    }
+
+    // Get relevant context from Upstash Vector DB (gracefully handle if not configured)
+    let context = "";
+    try {
+      context = await queryUpstashVector(question);
+    } catch (err) {
+      console.warn("Failed to get Upstash context, continuing without it:", err);
+      // Continue without context if Upstash fails
+    }
 
     // Create a readable stream for streaming response
     const encoder = new TextEncoder();
@@ -32,7 +47,9 @@ export async function POST(request: NextRequest) {
           controller.close();
         } catch (error) {
           console.error("Streaming error:", error);
-          controller.error(error);
+          const errorMessage = `Error: ${error instanceof Error ? error.message : "Unknown error"}`;
+          controller.enqueue(encoder.encode(errorMessage));
+          controller.close();
         }
       },
     });

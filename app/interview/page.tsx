@@ -12,6 +12,7 @@ export default function InterviewPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [answers, setAnswers] = useState<InterviewAnswer[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize session from sessionStorage
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function InterviewPage() {
 
     setIsStreaming(true);
     setCurrentAnswer("");
+    setError(null);
 
     try {
       const response = await fetch("/api/interview/stream", {
@@ -45,6 +47,11 @@ export default function InterviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: currentQuestion.text }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get response");
+      }
 
       if (!response.body) {
         throw new Error("No response body");
@@ -61,10 +68,10 @@ export default function InterviewPage() {
         setCurrentAnswer((prev) => prev + chunk);
       }
     } catch (error) {
-      console.error("Streaming error:", error);
-      setCurrentAnswer(
-        "An error occurred while fetching the response. Please try again."
-      );
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      console.error("Streaming error:", errorMessage);
+      setError(errorMessage);
+      setCurrentAnswer("");
     } finally {
       setIsStreaming(false);
     }
@@ -150,6 +157,15 @@ export default function InterviewPage() {
           </div>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
+            <p className="text-red-200 text-sm">
+              <strong>Error:</strong> {error}
+            </p>
+          </div>
+        )}
+
         {/* Answer Display Area */}
         <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 min-h-48">
           {currentAnswer ? (
@@ -181,30 +197,20 @@ export default function InterviewPage() {
         <div className="flex gap-4">
           <Button
             onClick={handleStreamAnswer}
-            disabled={isStreaming || !!currentAnswer}
+            disabled={isStreaming || (!!currentAnswer && !error)}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3"
           >
-            {isStreaming ? "Generating..." : "Generate Answer"}
+            {isStreaming ? "Generating..." : currentAnswer && !error ? "Regenerate Answer" : "Generate Answer"}
           </Button>
 
           <Button
             onClick={handleNext}
-            disabled={!currentAnswer || isStreaming}
+            disabled={!currentAnswer || isStreaming || !!error}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3"
           >
             Next Question
           </Button>
         </div>
-
-        {/* Regenerate Option */}
-        {currentAnswer && !isStreaming && (
-          <button
-            onClick={() => setCurrentAnswer("")}
-            className="w-full text-center text-slate-400 hover:text-slate-300 text-sm py-2"
-          >
-            ↻ Regenerate Answer
-          </button>
-        )}
       </div>
     </main>
   );
