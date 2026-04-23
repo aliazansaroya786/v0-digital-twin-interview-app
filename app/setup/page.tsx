@@ -24,7 +24,6 @@ export default function SetupPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[v0] Setup form submitted");
 
     if (!formData.name || !formData.email || !formData.role) {
       alert("Please fill in all fields");
@@ -43,12 +42,10 @@ export default function SetupPage() {
       answers: [],
     };
 
-    console.log("[v0] Saving session data:", sessionData);
     sessionStorage.setItem("interviewSession", JSON.stringify(sessionData));
 
     // Navigate to interview
     setTimeout(() => {
-      console.log("[v0] Navigating to interview");
       router.push("/interview");
     }, 100);
   };
