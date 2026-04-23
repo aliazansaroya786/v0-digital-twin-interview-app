@@ -99,18 +99,17 @@ export default function InterviewPage() {
       setCurrentQuestionIndex((prev) => prev + 1);
       setCurrentAnswer("");
     } else {
-      // All questions answered - go to results
+      // All questions answered - save session and go to chat
       const completedSession: InterviewSession = {
         ...session!,
         answers: [...answers, newAnswer],
-        completedAt: Date.now(),
       };
 
       sessionStorage.setItem(
         "interviewSession",
         JSON.stringify(completedSession)
       );
-      router.push("/results");
+      router.push("/chat");
     }
   };
 
