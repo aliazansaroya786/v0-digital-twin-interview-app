@@ -29,7 +29,7 @@ export default function HomePage() {
             This platform allows you to conduct a live interview with a digital twin powered by cutting-edge AI technology. Ask questions about leadership, innovation, career insights, and more.
           </p>
           <p className="text-slate-400">
-            Your answers will be streamed in real-time and compiled into a personalized PDF report at the end.
+            Your answers will be streamed in real-time and compiled into a personalized DOCX report at the end.
           </p>
         </div>
 
@@ -53,9 +53,9 @@ export default function HomePage() {
 
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
             <div className="text-2xl mb-2">Document</div>
-            <h3 className="text-lg font-semibold text-white mb-2">PDF Report</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">DOCX Report</h3>
             <p className="text-sm text-slate-400">
-              Download a professional PDF report with all answers and insights.
+              Download a professional DOCX report with all answers and insights.
             </p>
           </div>
         </div>

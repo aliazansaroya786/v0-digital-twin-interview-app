@@ -27,48 +27,178 @@ export default function ResultsPage() {
     }
   }, [router]);
 
-  const generatePDF = async () => {
+  const generateDOCX = async () => {
     if (!session) return;
 
     setIsExporting(true);
 
     try {
-      // Dynamically import html2pdf only in the browser
-      const html2pdfModule = await import("html2pdf.js");
-      const html2pdf = html2pdfModule.default || html2pdfModule;
-      
-      const element = document.getElementById("pdf-content");
-      if (!element) {
-        throw new Error("Report content not found");
+      // Dynamically import docx and file-saver only in the browser
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = await import("docx");
+      const { saveAs } = await import("file-saver");
+
+      const totalTime = session.completedAt
+        ? Math.round((session.completedAt - session.startedAt) / 60000)
+        : 0;
+
+      const score = Math.min(100, Math.round((session.answers.length / 5) * 100));
+
+      // Build document children
+      const children: any[] = [
+        // Title
+        new Paragraph({
+          text: "Digital Twin Interview Report",
+          heading: HeadingLevel.TITLE,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          text: "Interview with Ali Azan's Digital Twin",
+          heading: HeadingLevel.HEADING_1,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        }),
+
+        // Candidate Information
+        new Paragraph({
+          text: "Candidate Information",
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Name: ", bold: true }),
+            new TextRun(session.candidateName),
+          ],
+          spacing: { after: 50 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Email: ", bold: true }),
+            new TextRun(session.candidateEmail),
+          ],
+          spacing: { after: 50 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Role: ", bold: true }),
+            new TextRun(session.candidateRole),
+          ],
+          spacing: { after: 50 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Date: ", bold: true }),
+            new TextRun(new Date(session.completedAt || Date.now()).toLocaleDateString()),
+          ],
+          spacing: { after: 50 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Duration: ", bold: true }),
+            new TextRun(`${totalTime} minutes`),
+          ],
+          spacing: { after: 50 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Completion Score: ", bold: true }),
+            new TextRun(`${score}/100`),
+          ],
+          spacing: { after: 400 },
+        }),
+
+        // Interview Responses
+        new Paragraph({
+          text: "Interview Responses",
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 100 },
+        }),
+      ];
+
+      // Add answers
+      session.answers.forEach((answer, index) => {
+        children.push(
+          new Paragraph({
+            text: `${index + 1}. ${answer.questionText}`,
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 200, after: 50 },
+          })
+        );
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Category: ", bold: true }),
+              new TextRun(answer.category),
+            ],
+            spacing: { after: 50 },
+          })
+        );
+        children.push(
+          new Paragraph({
+            text: answer.answer,
+            spacing: { after: 200 },
+          })
+        );
+      });
+
+      // Add Chat Messages if available
+      if (session.chatMessages && session.chatMessages.length > 1) {
+        children.push(
+          new Paragraph({
+            text: "Additional Q&A",
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 200, after: 100 },
+          })
+        );
+
+        session.chatMessages.slice(1).forEach((message) => {
+          if (message.role === "user") {
+            children.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "Question: ", bold: true, color: "0000FF" }),
+                  new TextRun(message.content),
+                ],
+                spacing: { after: 100 },
+              })
+            );
+          } else {
+            children.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "Response: ", bold: true, color: "008000" }),
+                  new TextRun(message.content),
+                ],
+                spacing: { after: 200 },
+              })
+            );
+          }
+        });
       }
 
-      // Temporarily make the element visible for PDF generation
-      const originalDisplay = element.style.display;
-      element.style.display = "block";
-      element.style.position = "absolute";
-      element.style.left = "-9999px";
-      element.style.top = "-9999px";
-      element.style.visibility = "visible";
+      // Footer
+      children.push(
+        new Paragraph({
+          text: `Report generated on: ${new Date().toLocaleString()}`,
+          spacing: { before: 400 },
+        })
+      );
 
-      const filename = `interview-report-${new Date().toISOString().split("T")[0]}.pdf`;
+      // Create document
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: children,
+        }],
+      });
 
-      const options = {
-        margin: 10 as const,
-        filename: filename,
-        image: { type: "png" as const, quality: 0.98 },
-        html2canvas: { scale: 2, logging: false, useCORS: true },
-        jsPDF: { orientation: "portrait" as const, unit: "mm" as const, format: "a4" as const },
-        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-      };
-
-      // Call html2pdf with proper chaining
-      await html2pdf().set(options).from(element).save();
-
-      // Restore original style
-      element.style.display = originalDisplay;
+      // Generate and download
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `interview-report-${new Date().toISOString().split("T")[0]}.docx`);
     } catch (error) {
-      console.error("[v0] PDF generation error:", error);
-      alert("PDF generation failed. Try downloading as TXT or MD instead. Error: " + (error instanceof Error ? error.message : String(error)));
+      console.error("[v0] DOCX generation error:", error);
+      alert("DOCX generation failed. Please try downloading as TXT or MD instead.");
     } finally {
       setIsExporting(false);
     }
@@ -250,8 +380,8 @@ ${answer.answer}
           </div>
         </div>
 
-        {/* PDF Content for Export */}
-        <div id="pdf-content" className="bg-white p-8 rounded-lg hidden">
+        {/* DOCX Content for Export */}
+        <div id="docx-content" className="bg-white p-8 rounded-lg hidden">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Digital Twin Interview Report
@@ -424,11 +554,11 @@ ${answer.answer}
         {/* Action Buttons */}
         <div className="flex gap-4 flex-col sm:flex-row">
           <Button
-            onClick={generatePDF}
+            onClick={generateDOCX}
             disabled={isExporting}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3"
           >
-            {isExporting ? "Generating PDF..." : "Download Report (PDF)"}
+            {isExporting ? "Generating DOCX..." : "Download Report (DOCX)"}
           </Button>
           <Button
             onClick={generateTXT}

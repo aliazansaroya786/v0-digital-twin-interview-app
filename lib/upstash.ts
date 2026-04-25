@@ -1,3 +1,11 @@
+import Groq from "groq-sdk";
+
+function getGroqClient() {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return null;
+  return new Groq({ apiKey });
+}
+
 export async function queryUpstashVector(
   query: string,
   topK: number = 3
@@ -11,6 +19,10 @@ export async function queryUpstashVector(
   }
 
   try {
+    // Generate embedding using a simple hash-based approach
+    // This will work for basic similarity but may not be optimal
+    const embedding = generateSimpleEmbedding(query);
+    
     // Query the vector database for relevant context
     const response = await fetch(`${url}/query`, {
       method: "POST",
@@ -19,7 +31,7 @@ export async function queryUpstashVector(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        vector: await generateEmbedding(query),
+        vector: embedding,
         topK: topK,
         includeMetadata: true,
       }),
@@ -33,11 +45,13 @@ export async function queryUpstashVector(
     const results = await response.json();
 
     // Extract and format the context from results
-    if (results.matches && Array.isArray(results.matches)) {
-      return results.matches
+    if (results.result && results.result.matches && Array.isArray(results.result.matches)) {
+      const context = results.result.matches
         .map((match: any) => match.metadata?.text || "")
         .filter((text: string) => text)
         .join("\n\n");
+      
+      if (context) return context;
     }
 
     return "";
@@ -47,27 +61,24 @@ export async function queryUpstashVector(
   }
 }
 
-async function generateEmbedding(text: string): Promise<number[]> {
-  // Using a simple hash-based embedding for demo
-  // In production, you'd use a proper embedding model
-  const hash = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash;
-  };
-
-  // Generate a 384-dimensional embedding (to match Upstash default)
-  const embedding: number[] = [];
-  const baseHash = hash(text);
-  for (let i = 0; i < 384; i++) {
-    embedding.push(
-      Math.sin((baseHash + i) * 0.001) *
-        Math.cos((baseHash + i) * 0.002)
-    );
+// Generate a deterministic embedding from text
+function generateSimpleEmbedding(text: string): number[] {
+  // Create a seed from the text
+  let seed = 0;
+  for (let i = 0; i < text.length; i++) {
+    seed = ((seed << 5) - seed) + text.charCodeAt(i);
+    seed = seed & seed;
   }
-  return embedding;
+  
+  // Use the seed to generate a consistent embedding
+  const embedding: number[] = [];
+  for (let i = 0; i < 1024; i++) {
+    // Use sin/cos with different frequencies based on seed
+    const value = Math.sin((seed + i) * 0.01) * Math.cos((seed + i) * 0.02 + i * 0.001);
+    embedding.push(value);
+  }
+  
+  // Normalize the embedding
+  const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+  return embedding.map(val => val / magnitude);
 }

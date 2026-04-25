@@ -231,7 +231,7 @@ export default function ChatPage() {
               onClick={handleGenerateReport}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg"
             >
-              Generate Report & Download PDF
+              Generate Report & Download DOCX
             </Button>
             <Button
               type="button"
