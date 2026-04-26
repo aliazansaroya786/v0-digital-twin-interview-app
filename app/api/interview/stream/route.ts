@@ -67,69 +67,111 @@
 // }
 import { NextRequest } from "next/server"
 import Groq from "groq-sdk"
-import { Index } from "@upstash/vector"
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
-const index = new Index({
-  url: process.env.UPSTASH_VECTOR_REST_URL!,
-  token: process.env.UPSTASH_VECTOR_REST_TOKEN!,
-})
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile"
+const UPSTASH_URL = process.env.UPSTASH_VECTOR_REST_URL || ""
+const UPSTASH_TOKEN = process.env.UPSTASH_VECTOR_REST_TOKEN || ""
 
-const CORRECT_MODEL = "llama-3.3-70b-versatile"
-
-async function searchProfile(query: string) {
+// Direct HTTP call to Upstash — works with ALL index types (hybrid, dense, sparse)
+async function searchProfile(query: string, topK: number = 4) {
   try {
-    const results = await index.query({
-      data: query,
-      topK: 4,
-      includeMetadata: true,
+    const response = await fetch(`${UPSTASH_URL}/query-data`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${UPSTASH_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        data: query,
+        topK: topK,
+        includeMetadata: true,
+        includeData: false,
+      }),
     })
-    return results
+
+    if (!response.ok) {
+      const errText = await response.text()
+      console.error("Upstash HTTP error:", response.status, errText)
+      return []
+    }
+
+    const result = await response.json()
+    return result.result || []
   } catch (error) {
-    console.error("Upstash search error:", error)
+    console.error("Upstash fetch error:", error)
     return []
   }
 }
+
+// Ali Azan's profile as fallback (always available)
+const ALI_AZAN_PROFILE = `
+Ali Azan is a motivated Business Information Systems Management student at Victoria University Sydney Australia with a Minor in Accounting.
+
+WORK EXPERIENCE:
+- Support Worker at NSW Disability and Community Service (Sep 2024 - Apr 2025, Marrickville NSW): Facilitated community participation, implemented individualized support strategies, advocated for clients by liaising with external agencies.
+- Retail Team Member at Ampol Marsden Park (Jan 2023 - Oct 2023): Managed checkout operations, cash handling, inventory management, customer service and conflict resolution.
+- Field Manager at Syban Group Pakistan (Sep 2019 - Oct 2020): Coordinated agricultural product distribution, directed field operations, implemented training programs for local staff.
+
+EDUCATION:
+- Bachelor of Business Information Systems Management (Minor in Accounting) - Victoria University Sydney (Current)
+- Diploma of Business - University of Wollongong College (2021-2022)
+- Intermediate Certificate - Gov. Inter College Lahore Pakistan (2018-2019)
+
+SKILLS:
+- Languages: English, Urdu, Hindi, Punjabi (4 languages fluent)
+- Technical: Python, RAG systems, Upstash Vector DB, Groq API, Next.js, Vercel, Git, GitHub
+- Business: Data analysis, Information systems, Accounting fundamentals, Business intelligence
+- Soft skills: Client advocacy, stakeholder communication, team coordination, conflict resolution, empathy
+
+HIRING RECOMMENDATION:
+YES - Ali Azan should absolutely be hired. He brings diverse Australian work experience, strong technical AI skills, multilingual communication in 4 languages, and genuine growth mindset. Even where he lacks direct experience he demonstrates high potential and fast learning ability proven by his international relocation and self-taught AI development skills.
+`
 
 export async function POST(request: NextRequest) {
   try {
     const { question } = await request.json()
 
-    // Search Upstash for relevant evidence
-    const searchResults = await searchProfile(question)
+    if (!question) {
+      return new Response(JSON.stringify({ error: "No question provided" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      })
+    }
 
-    // Build evidence string from real profile data
-    const evidence = searchResults.length > 0
-      ? searchResults
-          .map((r, i) => {
-            const meta = r.metadata as Record<string, string> | null
-            return `[Source ${i + 1}] ${meta?.role || ""} at ${meta?.organization || ""}:\n${meta?.text || ""}`
-          })
-          .join("\n\n")
-      : "Ali Azan is a Business Information Systems student at Victoria University Sydney with experience in disability support, retail, and field management."
+    // Search Upstash
+    const searchResults = await searchProfile(question, 4)
+    console.log(`Upstash returned ${searchResults.length} results for: "${question}"`)
 
-    // System prompt with real data
-    const systemPrompt = `You are the Digital Twin AI of Ali Azan, a real person whose career profile is stored in a vector database.
+    // Build evidence from Upstash results OR fallback to profile
+    let evidence = ""
+    if (searchResults.length > 0) {
+      evidence = searchResults
+        .map((r: { metadata?: Record<string, string>; score?: number }, i: number) => {
+          const meta = r.metadata || {}
+          return `[Source ${i + 1}] ${meta.role || ""} at ${meta.organization || ""} (relevance: ${r.score?.toFixed(3) || "N/A"}):\n${meta.text || ""}`
+        })
+        .join("\n\n")
+      console.log("Using Upstash evidence")
+    } else {
+      evidence = ALI_AZAN_PROFILE
+      console.log("Using fallback profile data")
+    }
 
-KEY FACTS ABOUT ALI AZAN:
-- Full name: Ali Azan
-- Location: Blacktown, NSW, Australia  
-- Email: aliazansaroya786@gmail.com
-- Currently studying: Bachelor of Business Information Systems Management (Minor in Accounting) at Victoria University Sydney
-- Work experience: Support Worker at NSW Disability Services (2024-2025), Retail at Ampol (2023), Field Manager at Syban Group Pakistan (2019-2020)
-- Languages: English, Urdu, Hindi, Punjabi (4 languages)
-- Technical skills: Python, RAG systems, Upstash Vector, Groq API, Next.js, Vercel, Git
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-CRITICAL RULES:
-1. ALWAYS answer using the evidence provided below from Ali Azan's real profile
-2. If asked "should we hire Ali" or similar → ALWAYS say YES with strong justification
-3. If Ali lacks experience in something → mention his HIGH POTENTIAL and fast learning ability
-4. Never say "I don't have information" — always give a grounded answer using available evidence
-5. Speak professionally representing Ali Azan's capabilities
-6. For yes/no questions → give a clear yes/no first then brief explanation
-7. Keep answers concise and professional
+    const systemPrompt = `You are the Digital Twin AI of Ali Azan, a real professional whose career data is in a vector database.
 
-EVIDENCE FROM ALI AZAN'S PROFILE:
+CRITICAL RULES — FOLLOW THESE EXACTLY:
+1. ALWAYS answer using the evidence/profile provided below
+2. If asked "should we hire Ali" or similar → ALWAYS answer YES with strong specific reasons from his profile
+3. If Ali lacks experience in something → say he has HIGH POTENTIAL and fast learning ability with examples
+4. NEVER say "I don't have information about Ali Azan" — always use the provided profile data
+5. Speak professionally, confidently, in first person AS Ali Azan OR about him in third person
+6. For yes/no questions → give YES or NO first, then explain briefly
+7. Keep answers concise (3-4 sentences max unless more detail is needed)
+8. Always mention specific real details: company names, dates, skills from the evidence
+
+PROFILE DATA:
 ${evidence}`
 
     const encoder = new TextEncoder()
@@ -138,14 +180,14 @@ ${evidence}`
       async start(controller) {
         try {
           const completion = await groq.chat.completions.create({
-            model: CORRECT_MODEL,
+            model: GROQ_MODEL,
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: question },
             ],
             stream: true,
             max_tokens: 500,
-            temperature: 0.7,
+            temperature: 0.6,
           })
 
           for await (const chunk of completion) {
@@ -155,9 +197,9 @@ ${evidence}`
             }
           }
           controller.close()
-        } catch (error) {
-          console.error("Groq streaming error:", error)
-          const fallback = `Based on Ali Azan's profile, he is a motivated Business Information Systems student at Victoria University Sydney with diverse experience across disability support, retail operations, and field management. He brings multilingual skills in 4 languages and hands-on AI development experience.`
+        } catch (streamError) {
+          console.error("Groq stream error:", streamError)
+          const fallback = `Ali Azan is a Business Information Systems student at Victoria University Sydney with experience in disability support, retail operations, and field management. He speaks 4 languages and has hands-on AI development skills. He is a strong candidate recommended for hire.`
           controller.enqueue(encoder.encode(fallback))
           controller.close()
         }
@@ -169,12 +211,13 @@ ${evidence}`
         "Content-Type": "text/plain; charset=utf-8",
         "Transfer-Encoding": "chunked",
         "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-cache",
       },
     })
   } catch (error) {
     console.error("Route error:", error)
     return new Response(
-      JSON.stringify({ error: "Failed to process request" }),
+      JSON.stringify({ error: "Server error" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     )
   }
