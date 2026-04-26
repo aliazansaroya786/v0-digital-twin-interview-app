@@ -80,17 +80,46 @@ export default function ResultsPage() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-white">Interview Complete</h1>
+          <h1 className="text-4xl font-bold text-white">Interview Report - Ali Azan</h1>
           <p className="text-slate-400">
-            Thank you, {session.candidateName}! Here are your interview results.
+            {session.jobTitle} Interview Results
           </p>
         </div>
 
+        {/* Interview Details */}
+        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-slate-400 text-sm">Interviewer</p>
+              <p className="text-lg font-semibold text-white">{session.interviewerName}</p>
+              <p className="text-slate-400 text-sm">{session.interviewerEmail}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 text-sm">Company / Office</p>
+              <p className="text-lg font-semibold text-white">{session.officeName}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 text-sm">Position</p>
+              <p className="text-lg font-semibold text-white">{session.jobTitle}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 text-sm">Date</p>
+              <p className="text-lg font-semibold text-white">
+                {new Date(session.startedAt).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm">Questions Answered</p>
+            <p className="text-slate-400 text-sm">Standard Questions</p>
             <p className="text-2xl font-bold text-white">{session.answers.length}</p>
+          </div>
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <p className="text-slate-400 text-sm">Additional Questions</p>
+            <p className="text-2xl font-bold text-white">{session.additionalQuestions?.length || 0}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-sm">Time Taken</p>
@@ -115,22 +144,28 @@ export default function ResultsPage() {
             </p>
           </div>
 
-          {/* Candidate Info */}
+          {/* Interview Info */}
           <div className="mb-8 border-b pb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Candidate Information</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Interview Details</h2>
             <div className="space-y-2 text-gray-700">
               <p>
-                <strong>Name:</strong> {session.candidateName}
+                <strong>Interviewer:</strong> {session.interviewerName}
               </p>
               <p>
-                <strong>Email:</strong> {session.candidateEmail}
+                <strong>Email:</strong> {session.interviewerEmail}
               </p>
               <p>
-                <strong>Role:</strong> {session.candidateRole}
+                <strong>Company/Office:</strong> {session.officeName}
+              </p>
+              <p>
+                <strong>Position:</strong> {session.jobTitle}
+              </p>
+              <p>
+                <strong>Job Description:</strong> {session.jobDescription}
               </p>
               <p>
                 <strong>Date:</strong>{" "}
-                {new Date(session.completedAt || Date.now()).toLocaleDateString()}
+                {new Date(session.startedAt).toLocaleDateString()}
               </p>
               <p>
                 <strong>Duration:</strong> {totalTime} minutes
@@ -161,6 +196,26 @@ export default function ResultsPage() {
             </div>
           </div>
 
+          {/* Additional Questions */}
+          {session.additionalQuestions && session.additionalQuestions.length > 0 && (
+            <div className="mt-8 pt-8 border-t">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Additional Questions</h2>
+              <div className="space-y-8">
+                {session.additionalQuestions.map((qa, index) => (
+                  <div key={index} className="border-b pb-8">
+                    <p className="text-xs text-gray-500 mb-2">Additional Question {index + 1}</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {qa.question}
+                    </h3>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {qa.answer}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="mt-12 pt-8 border-t text-center text-gray-500 text-sm">
             <p>This report was generated by the Digital Twin Interview Platform</p>
@@ -190,6 +245,28 @@ export default function ResultsPage() {
             ))}
           </div>
         </div>
+
+        {/* Additional Questions */}
+        {session.additionalQuestions && session.additionalQuestions.length > 0 && (
+          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h2 className="text-2xl font-bold text-white mb-6">
+              Additional Questions ({session.additionalQuestions.length})
+            </h2>
+            <div className="space-y-6">
+              {session.additionalQuestions.map((qa, index) => (
+                <div key={index} className="border-b border-slate-700 pb-6 last:border-0">
+                  <p className="text-sm text-slate-400 mb-2">Question {index + 1}</p>
+                  <h3 className="text-lg font-semibold text-white mb-3">
+                    {qa.question}
+                  </h3>
+                  <p className="text-slate-300 leading-relaxed">
+                    {qa.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4 flex-col sm:flex-row">

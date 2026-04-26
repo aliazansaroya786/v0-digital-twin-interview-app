@@ -15,12 +15,19 @@ export interface InterviewAnswer {
 
 export interface InterviewSession {
   id: string;
-  candidateName: string;
-  candidateEmail: string;
-  candidateRole: string;
+  interviewerName: string;
+  interviewerEmail: string;
+  officeName: string;
+  jobTitle: string;
+  jobDescription: string;
   startedAt: number;
   completedAt?: number;
   answers: InterviewAnswer[];
+  additionalQuestions?: Array<{
+    question: string;
+    answer: string;
+    timestamp: number;
+  }>;
 }
 
 export const DEFAULT_QUESTIONS: InterviewQuestion[] = [

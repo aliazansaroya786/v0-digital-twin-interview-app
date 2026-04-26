@@ -39,7 +39,7 @@ export default function ChatPage() {
         {
           id: "welcome",
           role: "assistant",
-          content: `Thank you for completing the interview, ${parsedSession.candidateName}! Now you can ask me any questions about Ali Azan. Feel free to explore topics like leadership philosophy, innovation strategies, career insights, or anything else you'd like to know. When you're ready, you can generate your interview report.`,
+          content: `Thank you for the interview, ${parsedSession.interviewerName}! I've completed the 6 standard interview questions for the ${parsedSession.jobTitle} position at ${parsedSession.officeName}. You can now ask me any additional questions about Ali Azan—explore his leadership philosophy, innovation strategies, career insights, specific skills relevant to this role, or anything else you'd like to know. When you're ready, you can generate your interview report with all the responses.`,
           timestamp: new Date(),
         },
       ]);
@@ -121,6 +121,26 @@ export default function ChatPage() {
           )
         );
       }
+
+      // Track additional question in session
+      const additionalQuestion = {
+        question: inputValue,
+        answer: assistantContent,
+        timestamp: Date.now(),
+      };
+
+      setSession((prevSession) => {
+        if (!prevSession) return prevSession;
+        const updatedSession = {
+          ...prevSession,
+          additionalQuestions: [
+            ...(prevSession.additionalQuestions || []),
+            additionalQuestion,
+          ],
+        };
+        sessionStorage.setItem("interviewSession", JSON.stringify(updatedSession));
+        return updatedSession;
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       console.error("Chat error:", errorMessage);
