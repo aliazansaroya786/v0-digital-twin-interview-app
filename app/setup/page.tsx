@@ -8,43 +8,50 @@ import { Input } from "@/components/ui/input";
 export default function SetupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    role: "",
+    interviewerName: "",
+    interviewerEmail: "",
+    interviewerOffice: "",
+    jobTitle: "",
+    jobDescription: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.role) {
+    if (
+      !formData.interviewerName ||
+      !formData.interviewerEmail ||
+      !formData.interviewerOffice ||
+      !formData.jobTitle ||
+      !formData.jobDescription
+    ) {
       alert("Please fill in all fields");
       return;
     }
 
     setIsLoading(true);
 
-    // Store in session storage for the interview
     const sessionData = {
       id: `session-${Date.now()}`,
-      candidateName: formData.name,
-      candidateEmail: formData.email,
-      candidateRole: formData.role,
+      interviewerName: formData.interviewerName,
+      interviewerEmail: formData.interviewerEmail,
+      interviewerOffice: formData.interviewerOffice,
+      jobTitle: formData.jobTitle,
+      jobDescription: formData.jobDescription,
       startedAt: Date.now(),
       answers: [],
     };
 
     sessionStorage.setItem("interviewSession", JSON.stringify(sessionData));
 
-    // Navigate to interview
     setTimeout(() => {
       router.push("/interview");
     }, 100);
@@ -55,24 +62,30 @@ export default function SetupPage() {
       <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-white">Your Information</h1>
+          <h1 className="text-3xl font-bold text-white">Interviewer Details</h1>
           <p className="text-slate-400">
-            Please provide your details to begin the interview.
+            Enter your information and the role you are interviewing Ali Azan for.
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Interviewer section */}
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest pt-2">
+            Your information
+          </p>
+
           <div className="space-y-2">
-            <label htmlFor="name" className="block text-sm font-medium text-slate-300">
-              Full Name
+            <label htmlFor="interviewerName" className="block text-sm font-medium text-slate-300">
+              Your Full Name
             </label>
             <Input
-              id="name"
-              name="name"
+              id="interviewerName"
+              name="interviewerName"
               type="text"
-              placeholder="John Doe"
-              value={formData.name}
+              placeholder="e.g. Sarah Johnson"
+              value={formData.interviewerName}
               onChange={handleChange}
               className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
               required
@@ -80,15 +93,15 @@ export default function SetupPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-slate-300">
-              Email Address
+            <label htmlFor="interviewerEmail" className="block text-sm font-medium text-slate-300">
+              Your Email Address
             </label>
             <Input
-              id="email"
-              name="email"
+              id="interviewerEmail"
+              name="interviewerEmail"
               type="email"
-              placeholder="john@example.com"
-              value={formData.email}
+              placeholder="sarah@company.com"
+              value={formData.interviewerEmail}
               onChange={handleChange}
               className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
               required
@@ -96,17 +109,54 @@ export default function SetupPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="role" className="block text-sm font-medium text-slate-300">
-              Current Role / Title
+            <label htmlFor="interviewerOffice" className="block text-sm font-medium text-slate-300">
+              Company / Office Name
             </label>
             <Input
-              id="role"
-              name="role"
+              id="interviewerOffice"
+              name="interviewerOffice"
               type="text"
-              placeholder="e.g., Senior Product Manager"
-              value={formData.role}
+              placeholder="e.g. Acme Corp — Sydney Office"
+              value={formData.interviewerOffice}
               onChange={handleChange}
               className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+              required
+            />
+          </div>
+
+          {/* Job section */}
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest pt-4">
+            Role being interviewed for
+          </p>
+
+          <div className="space-y-2">
+            <label htmlFor="jobTitle" className="block text-sm font-medium text-slate-300">
+              Job Title
+            </label>
+            <Input
+              id="jobTitle"
+              name="jobTitle"
+              type="text"
+              placeholder="e.g. Junior Business Analyst"
+              value={formData.jobTitle}
+              onChange={handleChange}
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="jobDescription" className="block text-sm font-medium text-slate-300">
+              Job Description
+            </label>
+            <textarea
+              id="jobDescription"
+              name="jobDescription"
+              rows={5}
+              placeholder="Paste the job description here. The AI will tailor all 6 interview answers to this specific role."
+              value={formData.jobDescription}
+              onChange={handleChange}
+              className="w-full bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
               required
             />
           </div>

@@ -14,10 +14,9 @@ export default function InterviewPage() {
   const [answers, setAnswers] = useState<InterviewAnswer[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize session from sessionStorage
   useEffect(() => {
     const storedSession = sessionStorage.getItem("interviewSession");
-    
+
     if (!storedSession) {
       router.push("/setup");
       return;
@@ -35,7 +34,7 @@ export default function InterviewPage() {
   const currentQuestion = DEFAULT_QUESTIONS[currentQuestionIndex];
 
   const handleStreamAnswer = useCallback(async () => {
-    if (!currentQuestion || isStreaming) return;
+    if (!currentQuestion || isStreaming || !session) return;
 
     setIsStreaming(true);
     setCurrentAnswer("");
@@ -45,7 +44,11 @@ export default function InterviewPage() {
       const response = await fetch("/api/interview/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: currentQuestion.text }),
+        body: JSON.stringify({
+          question: currentQuestion.text,
+          jobTitle: session.jobTitle,
+          jobDescription: session.jobDescription,
+        }),
       });
 
       if (!response.ok) {
@@ -63,19 +66,19 @@ export default function InterviewPage() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         const chunk = decoder.decode(value);
         setCurrentAnswer((prev) => prev + chunk);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An unknown error occurred";
       console.error("Streaming error:", errorMessage);
       setError(errorMessage);
       setCurrentAnswer("");
     } finally {
       setIsStreaming(false);
     }
-  }, [currentQuestion, isStreaming]);
+  }, [currentQuestion, isStreaming, session]);
 
   const handleNext = () => {
     if (!currentAnswer.trim()) {
@@ -83,7 +86,6 @@ export default function InterviewPage() {
       return;
     }
 
-    // Save answer
     const newAnswer: InterviewAnswer = {
       questionId: currentQuestion.id,
       questionText: currentQuestion.text,
@@ -95,20 +97,14 @@ export default function InterviewPage() {
     setAnswers((prev) => [...prev, newAnswer]);
 
     if (currentQuestionIndex < DEFAULT_QUESTIONS.length - 1) {
-      // Move to next question
       setCurrentQuestionIndex((prev) => prev + 1);
       setCurrentAnswer("");
     } else {
-      // All questions answered - save session and go to chat
       const completedSession: InterviewSession = {
         ...session!,
         answers: [...answers, newAnswer],
       };
-
-      sessionStorage.setItem(
-        "interviewSession",
-        JSON.stringify(completedSession)
-      );
+      sessionStorage.setItem("interviewSession", JSON.stringify(completedSession));
       router.push("/chat");
     }
   };
@@ -127,7 +123,13 @@ export default function InterviewPage() {
         {/* Progress Header */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-white">Interview</h1>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Interview</h1>
+              <p className="text-slate-400 text-sm mt-1">
+                Role: <span className="text-blue-400 font-medium">{session.jobTitle}</span>
+                {" · "}{session.interviewerOffice}
+              </p>
+            </div>
             <span className="text-sm text-slate-400">
               Question {currentQuestionIndex + 1} of {DEFAULT_QUESTIONS.length}
             </span>
@@ -150,9 +152,7 @@ export default function InterviewPage() {
             <div className="inline-block px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-medium">
               {currentQuestion.category}
             </div>
-            <h2 className="text-2xl font-bold text-white">
-              {currentQuestion.text}
-            </h2>
+            <h2 className="text-2xl font-bold text-white">{currentQuestion.text}</h2>
           </div>
         </div>
 
@@ -183,7 +183,6 @@ export default function InterviewPage() {
             </div>
           )}
 
-          {/* Loading Indicator */}
           {isStreaming && (
             <div className="mt-4 flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
@@ -199,7 +198,11 @@ export default function InterviewPage() {
             disabled={isStreaming || (!!currentAnswer && !error)}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3"
           >
-            {isStreaming ? "Generating..." : currentAnswer && !error ? "Regenerate Answer" : "Generate Answer"}
+            {isStreaming
+              ? "Generating..."
+              : currentAnswer && !error
+              ? "Regenerate Answer"
+              : "Generate Answer"}
           </Button>
 
           <Button
@@ -207,7 +210,9 @@ export default function InterviewPage() {
             disabled={!currentAnswer || isStreaming || !!error}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3"
           >
-            Next Question
+            {currentQuestionIndex < DEFAULT_QUESTIONS.length - 1
+              ? "Next Question"
+              : "Finish Interview"}
           </Button>
         </div>
       </div>
